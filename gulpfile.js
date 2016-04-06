@@ -1,11 +1,16 @@
 const fs = require('fs');
-const gulp = require('gulp');
+const gulp = require('gulp-param')(require('gulp'), process.argv);
 const del = require('del');
 const zip = require('gulp-zip');
 const path = require('path');
 const merge = require('merge-stream');
+const xml2js = require('xml2js');
+const runSequence = require('run-sequence');
 
-var packages = 'src/packages/';
+var xmls = [];
+var packages = '';
+var pack = '';
+var i = 0;
 
 function getFolders(dir) {
     return fs.readdirSync(dir)
@@ -14,35 +19,78 @@ function getFolders(dir) {
     });
 }
 
+function getXmls(dir) {
+    return fs.readdirSync(dir)
+    .filter(function(file) {
+        return file.match(/.*\.xml/);
+    });
+}
+
+function getPackagesListFromXml(xml_object){
+	var fileslist = [];
+	xml2js.parseString(xml_object, function (err, result) {
+		fileslist = xml_object.extension.files[0].file.map(function(file){return file._.replace('.zip','');});
+	});
+	return fileslist;
+}
+
+function getXml(file){
+	var xml_file = fs.readFileSync(file);
+	xml2js.parseString(xml_file, function (err, result) {
+		xml_file = JSON.parse(JSON.stringify(result));
+	});
+	return xml_file;
+}
+
 gulp.task('default', function() {
-    
 });
 
 gulp.task('clean', function(cb) {
-    return del(['build'], cb);
+    return del(['build/'+pack,'build/'+pack+'.zip'], cb);
 });
 
-gulp.task('prepare', ['clean'], function() {
-    var packagesFolders = getFolders(packages);
+gulp.task('prepare', function() {
+	var xml_object = getXml(packages+'/' + pack + '.xml');
+    var packagesFolders = getPackagesListFromXml(xml_object);
 
     var tasks = packagesFolders.map(function(folder) {
         return gulp.src([path.join(packages, folder, '/**/*')], {base: packages})
             .pipe(zip(folder + ".zip"))
-            .pipe(gulp.dest('build/packages/'));
+            .pipe(gulp.dest('build/'+pack+'/packages/'));
     });
 
-    var xml = gulp.src(['src/*.xml'], {base:'src/'})
-        .pipe(gulp.dest('build/'));
+    var xml = gulp.src([packages+'/'+pack+'.xml'], {base:packages})
+        .pipe(gulp.dest('build/'+pack));
 
     return merge(tasks, xml);
 });
 
 gulp.task('preBuild', ['prepare'],  function() {
-    return gulp.src(['build/**/*'], {base:"build/"})
-        .pipe(zip(path.basename(__dirname) + ".zip"))
+    return gulp.src(['build/'+pack+'/**/*'], {base:"build/"+pack})
+        .pipe(zip( pack + ".zip"))
         .pipe(gulp.dest('build/'));
 });
 
-gulp.task('build', ['preBuild'], function() {
-    return del(['build/**/*', '!build/' + path.basename(__dirname) + ".zip"]);
+gulp.task('buildup', ['preBuild'], function() {
+    return del(['build/'+pack]);
+})
+
+function processPack(){
+	pack = xmls[i];
+	i++;
+	runSequence(
+	'buildup',
+	function (error) {
+		console.log(pack+' done');
+		if(xmls.length > i){
+			processPack();
+		}
+	});
+}
+
+gulp.task('build', function(fold) {
+	packages = '../'+fold;
+	xmls = getXmls(packages);
+	xmls = xmls.map(function(xml_file){return xml_file.split('.')[0]; });
+	processPack();
 })
