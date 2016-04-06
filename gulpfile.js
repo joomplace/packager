@@ -6,6 +6,7 @@ const path = require('path');
 const merge = require('merge-stream');
 const xml2js = require('xml2js');
 const runSequence = require('run-sequence');
+const prompt = require('gulp-prompt');
 
 var xmls = [];
 var packages = '';
@@ -42,7 +43,23 @@ function getXml(file){
 	return xml_file;
 }
 
+function getProjects() {
+    return fs.readdirSync('../')
+    .filter(function(file) {
+        return fs.statSync(path.join('../', file)).isDirectory();
+    });
+}
+
 gulp.task('default', function() {
+    gulp.src('')
+    .pipe(prompt.prompt({
+        type: 'list',
+        name: 'fold',
+        message: 'Project to build:',
+        choices: getProjects()
+    }, function(res){
+        build(res.fold);
+    }));
 });
 
 gulp.task('clean', function(cb) {
@@ -88,9 +105,13 @@ function processPack(){
 	});
 }
 
-gulp.task('build', function(fold) {
-	packages = '../'+fold;
+function build(fold) {
+    packages = '../'+fold;
 	xmls = getXmls(packages);
 	xmls = xmls.map(function(xml_file){return xml_file.split('.')[0]; });
 	processPack();
+}
+
+gulp.task('build', function(fold) {
+    build(fold);
 })
