@@ -35,6 +35,30 @@ function getPackagesListFromXml(xml_object){
 	return fileslist;
 }
 
+function getVersionFromXml(xml_object){
+	var version = xml_object.extension.version[0];
+	return version;
+}
+
+function xmlUpdateVersion(path, value){
+	var xml = getXml(path);
+	xml.extension.version[0] = value;
+	xml = (new xml2js.Builder()).buildObject(xml);
+	fs.writeFileSync(path,xml);
+}
+
+function updateComponentXml(base, xml_object, value){
+	var files = xml_object.extension.files[0].file.filter(function(file){return file['$'].type=='component'}).map(function(file){return file._.replace('.zip','')+'/'+file['$'].id.replace('com_','');});
+	
+	files.map(function(file){
+		var path = base+file+'.xml';
+		var xml = getXml(path);
+		xml.extension.version[0] = value;
+		xml = (new xml2js.Builder()).buildObject(xml);
+		fs.writeFileSync(path,xml);
+	});
+}
+
 function getXml(file){
 	var xml_file = fs.readFileSync(file);
 	xml2js.parseString(xml_file, function (err, result) {
@@ -68,6 +92,20 @@ gulp.task('clean', function(cb) {
 
 gulp.task('prepare', function() {
 	var xml_object = getXml(packages+'/' + pack + '.xml');
+	
+    var version = getVersionFromXml(xml_object).split('.');
+	version[version.length-1]++;
+	if(version[version.length-1]<=99){
+		if(version[version.length-1]<=9){
+			version[version.length-1] = '0'+version[version.length-1];
+		}
+		version[version.length-1] = '0'+version[version.length-1];
+	}
+	version = version.join('.');
+	
+	updateComponentXml(packages+'/', xml_object, version);
+	xmlUpdateVersion(packages+'/' + pack + '.xml',version);
+	
     var packagesFolders = getPackagesListFromXml(xml_object);
 
     var tasks = packagesFolders.map(function(folder) {
