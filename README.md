@@ -11,3 +11,10 @@ npm install
 ```
 
 Run `gulp build`
+
+
+____
+May be needed
+```
+npm install -g gulp
+```
