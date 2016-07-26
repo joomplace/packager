@@ -11,6 +11,7 @@ const prompt = require('gulp-prompt');
 var xmls = [];
 var packages = '';
 var pack = '';
+var globalVersion = '';
 var i = 0;
 
 function getFolders(dir) {
@@ -101,6 +102,8 @@ gulp.task('prepare', function() {
 		}
 		version[version.length-1] = '0'+version[version.length-1];
 	}
+	
+	globalVersion = version.slice(0, 3).join('');
 	version = version.join('.');
 	
 	updateComponentXml(packages+'/', xml_object, version);
@@ -122,7 +125,7 @@ gulp.task('prepare', function() {
 
 gulp.task('preBuild', ['prepare'],  function() {
     return gulp.src(['build/'+pack+'/**/*'], {base:"build/"+pack})
-        .pipe(zip( pack + ".zip"))
+        .pipe(zip( pack + "_"+globalVersion+".zip"))
         .pipe(gulp.dest('build/'));
 });
 
@@ -132,6 +135,7 @@ gulp.task('buildup', ['preBuild'], function() {
 
 function processPack(){
 	pack = xmls[i];
+	globalVersion = '';
 	i++;
 	runSequence(
 	'buildup',
