@@ -10,8 +10,8 @@ cd my-component-name
 npm install
 ```
 
-Run `gulp build`
-
+Run `gulp build` for building downloadable version
+Run `gulp test` for building test version(without updater and build update)
 
 ____
 May be needed
