@@ -157,3 +157,27 @@ function build(fold) {
 gulp.task('build', function(fold) {
     build(fold);
 })
+
+function testPack(){
+	pack = xmls[i];
+	globalVersion = '';
+	i++;
+	runSequence(
+	function (error) {
+		console.log(pack+' done');
+		if(xmls.length > i){
+			testPack();
+		}
+	});
+}
+
+function test(fold) {
+    packages = '../'+fold;
+	xmls = getXmls(packages);
+	xmls = xmls.map(function(xml_file){return xml_file.split('.')[0]; });
+	testPack();
+}
+
+gulp.task('test', function(fold) {
+    test(fold);
+})
