@@ -11,6 +11,7 @@ npm install
 ```
 
 Run `gulp build` for building downloadable version
+
 Run `gulp test` for building test version(without updater and build update)
 
 ____
