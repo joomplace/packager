@@ -11,6 +11,7 @@ const prompt = require('gulp-prompt');
 var xmls = [];
 var packages = '';
 var pack = '';
+var update_build = true;
 var globalVersion = '';
 var i = 0;
 
@@ -95,7 +96,9 @@ gulp.task('prepare', function() {
 	var xml_object = getXml(packages+'/' + pack + '.xml');
 	
     var version = getVersionFromXml(xml_object).split('.');
-	version[version.length-1]++;
+	if(update_build){
+		version[version.length-1]++;
+	}
 	if(version[version.length-1]<=99){
 		if(version[version.length-1]<=9){
 			version[version.length-1] = '0'+version[version.length-1];
@@ -158,26 +161,8 @@ gulp.task('build', function(fold) {
     build(fold);
 })
 
-function testPack(){
-	pack = xmls[i];
-	globalVersion = '';
-	i++;
-	runSequence(
-	function (error) {
-		console.log(pack+' done');
-		if(xmls.length > i){
-			testPack();
-		}
-	});
-}
-
-function test(fold) {
-    packages = '../'+fold;
-	xmls = getXmls(packages);
-	xmls = xmls.map(function(xml_file){return xml_file.split('.')[0]; });
-	testPack();
-}
-
-gulp.task('test', function(fold) {
-    test(fold);
+gulp.task('test_', function() {
+	update_build = false;
 })
+
+gulp.task('test', ['test_','default']);
