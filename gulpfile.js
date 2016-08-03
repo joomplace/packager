@@ -4,6 +4,8 @@ const del = require('del');
 const zip = require('gulp-zip');
 const path = require('path');
 const merge = require('merge-stream');
+const mapstream = require('map-stream');
+const tap = require('gulp-tap');
 const xml2js = require('xml2js');
 const runSequence = require('run-sequence');
 const prompt = require('gulp-prompt');
@@ -95,22 +97,21 @@ gulp.task('clean', function(cb) {
 gulp.task('prepare', function() {
 	var xml_object = getXml(packages+'/' + pack + '.xml');
 	
-    var version = getVersionFromXml(xml_object).split('.');
 	if(update_build){
-		version[version.length-1]++;
-	}
-	if(version[version.length-1]<=99){
-		if(version[version.length-1]<=9){
+		var version = getVersionFromXml(xml_object).split('.');
+		
+		if(version[version.length-1]<=99){
+			if(version[version.length-1]<=9){
+				version[version.length-1] = '0'+version[version.length-1];
+			}
 			version[version.length-1] = '0'+version[version.length-1];
 		}
-		version[version.length-1] = '0'+version[version.length-1];
+		
+		globalVersion = version.slice(0, 3).join('');
+		version = version.join('.');
+		updateComponentXml(packages+'/', xml_object, version);
+		xmlUpdateVersion(packages+'/' + pack + '.xml',version);
 	}
-	
-	globalVersion = version.slice(0, 3).join('');
-	version = version.join('.');
-	
-	updateComponentXml(packages+'/', xml_object, version);
-	xmlUpdateVersion(packages+'/' + pack + '.xml',version);
 	
     var packagesFolders = getPackagesListFromXml(xml_object);
 
@@ -121,10 +122,20 @@ gulp.task('prepare', function() {
     });
 
     var xml = gulp.src([packages+'/'+pack+'.xml'], {base:packages})
+		.pipe(tap(function(file){
+			stripupdater(file);
+		}))
         .pipe(gulp.dest('build/'+pack));
 
     return merge(tasks, xml);
 });
+
+function stripupdater(file){
+	if(!update_build){
+		file.contents = new Buffer(file.contents.toString().replace('<file type="plugin" id="updater" group="installer">plg_installer_joomplaceupdater.zip</file>', ''));
+	}
+	return file;
+}
 
 gulp.task('preBuild', ['prepare'],  function() {
     return gulp.src(['build/'+pack+'/**/*'], {base:"build/"+pack})
