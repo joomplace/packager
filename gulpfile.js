@@ -4,7 +4,6 @@ const del = require('del');
 const zip = require('gulp-zip');
 const path = require('path');
 const merge = require('merge-stream');
-const mapstream = require('map-stream');
 const tap = require('gulp-tap');
 const xml2js = require('xml2js');
 const runSequence = require('run-sequence');
@@ -99,7 +98,7 @@ gulp.task('prepare', function() {
 	
 	if(update_build){
 		var version = getVersionFromXml(xml_object).split('.');
-		
+		version[version.length-1]++;
 		if(version[version.length-1]<=99){
 			if(version[version.length-1]<=9){
 				version[version.length-1] = '0'+version[version.length-1];
