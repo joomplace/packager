@@ -176,3 +176,8 @@ gulp.task('test_', function() {
 })
 
 gulp.task('test', ['test_','default']);
+
+gulp.task('testpackage', function(fold) {
+	update_build = false;
+    build(fold);
+});
